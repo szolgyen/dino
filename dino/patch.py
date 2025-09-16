@@ -1,5 +1,7 @@
 import os
 import sys
+from PIL import Image
+import glob
 import tqdm
 import time
 import json
@@ -16,7 +18,7 @@ import multiprocessing as mp
 
 from pathlib import Path
 from omegaconf import DictConfig
-from torchvision import datasets
+from torch.utils.data import Dataset
 
 import dino.models.vision_transformer as vits
 
@@ -37,8 +39,24 @@ from dino.utils import (
 )
 from dino.log import initialize_wandb, update_log_dict
 
+class FlatImageDataset(Dataset):
+    """Custom Dataset for loading images from a directory structure where all images
+    are stored in subdirectories named imgs0, imgs1, etc."""
+    def __init__(self, root, transform=None):
+        self.paths = glob.glob(os.path.join(root, "imgs*", "*.jpg"))
+        self.transform = transform
 
-@hydra.main(version_base="1.2.0", config_path="config", config_name="patch")
+    def __len__(self):
+        return len(self.paths)
+
+    def __getitem__(self, idx):
+        path = self.paths[idx]
+        img = Image.open(path).convert("RGB")
+        if self.transform:
+            img = self.transform(img)
+        return img, 0  # no class labels, just dummy "0"
+
+@hydra.main(version_base="1.2.0", config_path="config", config_name="patch_akos")
 def main(cfg: DictConfig):
     distributed = torch.cuda.device_count() > 1
     if distributed:
@@ -119,7 +137,7 @@ def main(cfg: DictConfig):
 
     # ============ preparing training data ============
     dataset_loading_start_time = time.time()
-    dataset = datasets.ImageFolder(cfg.data_dir, transform=transform)
+    dataset = FlatImageDataset(cfg.data_dir, transform=transform)
     dataset_loading_end_time = time.time() - dataset_loading_start_time
     total_time_str = str(datetime.timedelta(seconds=int(dataset_loading_end_time)))
     if is_main_process():
