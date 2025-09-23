@@ -60,7 +60,7 @@ class FlatImageDataset(Dataset):
 def main(cfg: DictConfig):
     distributed = torch.cuda.device_count() > 1
     if distributed:
-        torch.distributed.init_process_group(backend="nccl")
+        torch.distributed.init_process_group(backend="gloo")
         gpu_id = int(os.environ["LOCAL_RANK"])
         if gpu_id == 0:
             print("Distributed session successfully initialized")
