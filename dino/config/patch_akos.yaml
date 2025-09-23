@@ -8,10 +8,10 @@ resume: False
 resume_from_checkpoint: 'latest.pth'
 
 model:
-  arch: 'vit_small'
-  input_size: 256
+  arch: 'vit_tiny'
+  input_size: 96
   patch_size: 16
-  out_dim: 65536 # dimensionality of the DINO head output. For complex and large datasets large values (like 65k) work well
+  out_dim: 16384 # dimensionality of the DINO head output. For complex and large datasets large values (like 65k) work well
   norm_last_layer: False # whether or not to weight normalize the last layer of the DINO head ; not normalizing leads to better performance but can make the training unstable.
   momentum_teacher: 0.996 # base EMA parameter for teacher update. The value is increased to 1 during training with cosine schedule ; we recommend setting a higher value with small batches: for example use 0.9995 with batch size of 256
   use_bn_in_head: False # whether to use batch normalizations in projection head
@@ -25,7 +25,7 @@ training:
   nepochs: 50
   warmup_epochs: 3 # number of epochs for the linear learning-rate warm up.
   freeze_last_layer: 1 # number of epochs during which we keep the output layer fixed ; typically doing so during the first epoch helps training ; try increasing this value if the loss does not decrease
-  batch_size_per_gpu: 8
+  batch_size_per_gpu: 64
   clip_grad: 3.0 # maximal parameter gradient norm if using gradient clipping ; clipping with norm .3 ~ 1.0 can help optimization for larger ViT architectures. 0 for disabling
   pct:
 
@@ -41,7 +41,7 @@ early_stopping:
     query_csv: ''
     test_csv: ''
     label_name: 'label'
-    batch_size_per_gpu: 8
+    batch_size_per_gpu: 64
     num_workers: 4
   knn:
     k: 20
@@ -51,7 +51,7 @@ early_stopping:
 
 optim:
   name: 'adamw' # type of optimizer ; we recommend using adamw with ViTs
-  lr: 0.0005 # learning rate at the end of linear warmup (highest LR used during training) ; the learning rate is linearly scaled with the batch size, and specified here for a reference batch size of 256
+  lr: 0.00003 # learning rate at the end of linear warmup (highest LR used during training) ; the learning rate is linearly scaled with the batch size, and specified here for a reference batch size of 256
   wd: 1e-5
   lr_scheduler:
     name: 'cosine'
